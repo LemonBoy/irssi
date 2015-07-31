@@ -93,7 +93,7 @@ static gboolean do_redraw(gpointer unused)
 	terminfo_cont(current_term);
 	irssi_redraw();
 
-        return 1;
+	return 1;
 }
 
 static GSourceFuncs sigcont_funcs = {
@@ -105,24 +105,24 @@ static GSourceFuncs sigcont_funcs = {
 int term_init(void)
 {
 	struct sigaction act;
-        int width, height;
+	int width, height;
 
 	last_fg = last_bg = -1;
 	last_attrs = 0;
 	vcx = vcy = 0; crealx = crealy = -1;
 	vcmove = FALSE; cforcemove = TRUE;
-        curs_visible = TRUE;
+	curs_visible = TRUE;
 
 	current_term = terminfo_core_init(stdin, stdout);
 	if (current_term == NULL)
 		return FALSE;
 
 	if (term_get_size(&width, &height)) {
-                current_term->width = width;
-                current_term->height = height;
+		current_term->width = width;
+		current_term->height = height;
 	}
 
-        /* grab CONT signal */
+	/* grab CONT signal */
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
 	act.sa_handler = sig_cont;
@@ -136,9 +136,9 @@ int term_init(void)
 	term_height = current_term->height;
 	root_window = term_window_create(0, 0, term_width, term_height);
 
-        term_lines_empty = g_new0(char, term_height);
+	term_lines_empty = g_new0(char, term_height);
 
-        term_set_input_type(TERM_TYPE_8BIT);
+	term_set_input_type(TERM_TYPE_8BIT);
 	term_common_init();
         atexit(term_deinit);
         return TRUE;
@@ -193,7 +193,7 @@ void term_resize(int width, int height)
 {
 	if (width < 0 || height < 0) {
 		width = current_term->width;
-                height = current_term->height;
+		height = current_term->height;
 	}
 
 	if (term_width != width || term_height != height) {
@@ -201,11 +201,11 @@ void term_resize(int width, int height)
 		term_height = current_term->height = height;
 		term_window_move(root_window, 0, 0, term_width, term_height);
 
-                g_free(term_lines_empty);
+		g_free(term_lines_empty);
 		term_lines_empty = g_new0(char, term_height);
 	}
 
-        term_move_reset(0, 0);
+	term_move_reset(0, 0);
 }
 
 void term_resize_final(int width, int height)
@@ -215,7 +215,7 @@ void term_resize_final(int width, int height)
 /* Returns TRUE if terminal has colors */
 int term_has_colors(void)
 {
-        return current_term->TI_colors > 0;
+	return current_term->TI_colors > 0;
 }
 
 /* Force the colors on any way you can */
@@ -227,9 +227,9 @@ void term_force_colors(int set)
 /* Clear screen */
 void term_clear(void)
 {
-        term_set_color(root_window, ATTR_RESET);
+	term_set_color(root_window, ATTR_RESET);
 	terminfo_clear();
-        term_move_reset(0, 0);
+	term_move_reset(0, 0);
 
 	memset(term_lines_empty, 1, term_height);
 }
@@ -237,7 +237,7 @@ void term_clear(void)
 /* Beep */
 void term_beep(void)
 {
-        terminfo_beep(current_term);
+	terminfo_beep(current_term);
 }
 
 /* Create a new window in terminal */
@@ -246,26 +246,29 @@ TERM_WINDOW *term_window_create(int x, int y, int width, int height)
 	TERM_WINDOW *window;
 
 	window = g_new0(TERM_WINDOW, 1);
-        window->term = current_term;
-	window->x = x; window->y = y;
-	window->width = width; window->height = height;
-        return window;
+
+  window->term = current_term;
+	window->x = x; 
+	window->y = y;
+	window->width = width; 
+	window->height = height;
+
+  return window;
 }
 
 /* Destroy a terminal window */
 void term_window_destroy(TERM_WINDOW *window)
 {
-        g_free(window);
+	g_free(window);
 }
 
 /* Move/resize a window */
-void term_window_move(TERM_WINDOW *window, int x, int y,
-		      int width, int height)
+void term_window_move(TERM_WINDOW *window, int x, int y, int width, int height)
 {
 	window->x = x;
 	window->y = y;
 	window->width = width;
-        window->height = height;
+	window->height = height;
 }
 
 /* Clear window */
@@ -273,12 +276,13 @@ void term_window_clear(TERM_WINDOW *window)
 {
 	int y;
 
-        terminfo_set_normal();
-        if (window->y == 0 && window->height == term_height) {
-        	term_clear();
-        } else {
+	terminfo_set_normal();
+	if (window->y == 0 && window->height == term_height &&
+			window->x == 0 && window->width == term_width) {
+		term_clear();
+	} else {
 		for (y = 0; y < window->height; y++) {
-			term_move(window, 0, y);
+			term_move(window, window->x, y);
 			term_clrtoeol(window);
 		}
 	}
@@ -290,16 +294,16 @@ void term_window_scroll(TERM_WINDOW *window, int count)
 	int y;
 
 	terminfo_scroll(window->y, window->y+window->height-1, count);
-        term_move_reset(vcx, vcy);
+	term_move_reset(vcx, vcy);
 
-        /* set the newly scrolled area dirty */
+	/* set the newly scrolled area dirty */
 	for (y = 0; (window->y+y) < term_height && y < window->height; y++)
 		term_lines_empty[window->y+y] = FALSE;
 }
 
 inline static int term_putchar(int c)
 {
-        return fputc(c, current_term->out);
+	return fputc(c, current_term->out);
 }
 
 /* copied from terminfo-core.c */
@@ -441,18 +445,18 @@ void term_set_color(TERM_WINDOW *window, int col)
 void term_move(TERM_WINDOW *window, int x, int y)
 {
 	if (x >= 0 && y >= 0) {
-	vcmove = TRUE;
-	vcx = x+window->x;
-        vcy = y+window->y;
+		vcmove = TRUE;
+		vcx = x + window->x;
+		vcy = y + window->y;
 
-	if (vcx >= term_width)
-		vcx = term_width-1;
-	if (vcy >= term_height)
-                vcy = term_height-1;
+		if (vcx >= term_width)
+			vcx = term_width - 1;
+		if (vcy >= term_height)
+			vcy = term_height - 1;
 	}
 }
 
-static void term_printed_text(int count)
+static void term_printed_text(TERM_WINDOW *window, int count)
 {
 	term_lines_empty[vcy] = FALSE;
 
@@ -481,7 +485,7 @@ void term_addch(TERM_WINDOW *window, char chr)
 	   (7. bit off) */
 	if (term_type != TERM_TYPE_UTF8 ||
 	    (chr & 0x80) == 0 || (chr & 0x40) == 0) {
-		term_printed_text(1);
+		term_printed_text(window, 1);
 	}
 
 	putc(chr, window->term->out);
@@ -503,20 +507,20 @@ void term_add_unichar(TERM_WINDOW *window, unichar chr)
 
 	switch (term_type) {
 	case TERM_TYPE_UTF8:
-	  	term_printed_text(unichar_isprint(chr) ? mk_wcwidth(chr) : 1);
+	  	term_printed_text(window, unichar_isprint(chr) ? mk_wcwidth(chr) : 1);
                 term_addch_utf8(window, chr);
 		break;
 	case TERM_TYPE_BIG5:
 		if (chr > 0xff) {
-			term_printed_text(2);
+			term_printed_text(window, 2);
 			putc((chr >> 8) & 0xff, window->term->out);
 		} else {
-			term_printed_text(1);
+			term_printed_text(window, 1);
 		}
 		putc((chr & 0xff), window->term->out);
                 break;
 	default:
-		term_printed_text(1);
+		term_printed_text(window, 1);
 		putc(chr, window->term->out);
                 break;
 	}
@@ -528,14 +532,21 @@ void term_addstr(TERM_WINDOW *window, const char *str)
 
 	if (vcmove) term_move_real();
 	len = strlen(str); /* FIXME utf8 or big5 */
-        term_printed_text(len);
+	term_printed_text(window, len);
 
 	fwrite(str, 1, len, window->term->out);
+}
+
+
+int term_get_width(TERM_WINDOW *window)
+{
+	return window->width;
 }
 
 void term_clrtoeol(TERM_WINDOW *window)
 {
 	/* clrtoeol() doesn't necessarily understand colors */
+#if 0
 	if (last_fg == -1 && last_bg == -1 &&
 	    (last_attrs & (ATTR_UNDERLINE|ATTR_REVERSE|ATTR_ITALIC)) == 0) {
 		if (!term_lines_empty[vcy]) {
@@ -543,19 +554,20 @@ void term_clrtoeol(TERM_WINDOW *window)
 			terminfo_clrtoeol();
 			if (vcx == 0) term_lines_empty[vcy] = TRUE;
 		}
-	} else if (vcx < term_width) {
-		/* we'll need to fill the line ourself. */
+	} else 
+#endif
+	if (vcx < term_width) {
 		if (vcmove) term_move_real();
-		terminfo_repeat(' ', term_width-vcx);
+		terminfo_repeat(' ', window->x + window->width - vcx);
 		terminfo_move(vcx, vcy);
-                term_lines_empty[vcy] = FALSE;
+		term_lines_empty[vcy] = FALSE;
 	}
 }
 
 void term_move_cursor(int x, int y)
 {
 	curs_x = x;
-        curs_y = y;
+	curs_y = y;
 }
 
 void term_refresh(TERM_WINDOW *window)

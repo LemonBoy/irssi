@@ -118,13 +118,13 @@ void window_destroy(WINDOW_REC *window)
 	while (window->items != NULL)
 		window_item_destroy(window->items->data);
 
-        if (settings_get_bool("windows_auto_renumber"))
+	if (settings_get_bool("windows_auto_renumber"))
 		windows_pack(window->refnum);
 
 	signal_emit("window destroyed", 1, window);
 
 	while (window->bound_items != NULL)
-                window_bind_destroy(window, window->bound_items->data);
+		window_bind_destroy(window, window->bound_items->data);
 
 	g_free_not_null(window->hilight_color);
 	g_free_not_null(window->servertag);
@@ -201,7 +201,7 @@ void window_set_refnum(WINDOW_REC *window, int refnum)
 
 		if (rec->refnum == refnum) {
 			rec->refnum = window->refnum;
-                        signal_emit("window refnum changed", 2, rec, GINT_TO_POINTER(refnum));
+			signal_emit("window refnum changed", 2, rec, GINT_TO_POINTER(refnum));
 			break;
 		}
 	}
@@ -454,15 +454,13 @@ GSList *windows_get_sorted(void)
 {
 	GSList *tmp, *sorted;
 
-        sorted = NULL;
+	sorted = NULL;
 	for (tmp = windows; tmp != NULL; tmp = tmp->next) {
 		WINDOW_REC *rec = tmp->data;
-
-		sorted = g_slist_insert_sorted(sorted, rec, (GCompareFunc)
-					       window_refnum_cmp);
+		sorted = g_slist_insert_sorted(sorted, rec, (GCompareFunc)window_refnum_cmp);
 	}
 
-        return sorted;
+	return sorted;
 }
 
 /* Add a new bind to window - if duplicate is found it's returned */
