@@ -387,9 +387,9 @@ static void view_reset_cache(TEXT_BUFFER_VIEW_REC *view)
 static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 			  int subline, int ypos, int max)
 {
-        INDENT_FUNC indent_func;
+	INDENT_FUNC indent_func;
 	LINE_CACHE_REC *cache;
-        const unsigned char *text, *end, *text_newline;
+	const unsigned char *text, *end, *text_newline;
 	unsigned char *tmp;
 	unichar chr;
 	int xpos, color, drawcount, first, need_move, need_clrtoeol, char_width;
@@ -398,20 +398,21 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 #endif
 
 	if (view->dirty) /* don't bother drawing anything - redraw is coming */
-                return 0;
+		return 0;
 
 	cache = textbuffer_view_get_line_cache(view, line);
 	if (subline >= cache->count)
-                return 0;
+		return 0;
 
-        color = ATTR_RESET;
-        need_move = TRUE; need_clrtoeol = FALSE;
+	color = ATTR_RESET;
+	need_move = TRUE; need_clrtoeol = FALSE;
 	xpos = drawcount = 0; first = TRUE;
 	text_newline = text =
 		subline == 0 ? line->text : cache->lines[subline-1].start;
+
 	for (;;) {
 		if (text == text_newline) {
-			if (need_clrtoeol && xpos < term_width) {
+			if (need_clrtoeol && xpos < term_get_width(view->window)) {
 				term_set_color(view->window, ATTR_RESET);
 				term_clrtoeol(view->window);
 			}
@@ -420,29 +421,28 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 				first = FALSE;
 			else {
 				ypos++;
-                                if (--max == 0)
+				if (--max == 0)
 					break;
 			}
 
 			if (subline > 0) {
-                                /* continuing previous line - indent it */
+				/* continuing previous line - indent it */
 				indent_func = cache->lines[subline-1].indent_func;
 				if (indent_func == NULL)
 					xpos = cache->lines[subline-1].indent;
-                                color = cache->lines[subline-1].color;
+					color = cache->lines[subline-1].color;
 #ifdef TERM_TRUECOLOR
-                                fg24 = cache->lines[subline-1].fg24;
-                                bg24 = cache->lines[subline-1].bg24;
+					fg24 = cache->lines[subline-1].fg24;
+					bg24 = cache->lines[subline-1].bg24;
 #endif
 			} else {
 				indent_func = NULL;
 			}
 
-			if (xpos == 0 && indent_func == NULL)
-                                need_clrtoeol = TRUE;
+			if (0 && xpos == 0 && indent_func == NULL)
+				need_clrtoeol = TRUE;
 			else {
-				/* line was indented - need to clear the
-                                   indented area first */
+				/* line was indented - need to clear the indented area first */
 				term_set_color(view->window, ATTR_RESET);
 				term_move(view->window, 0, ypos);
 				term_clrtoeol(view->window);
@@ -464,7 +464,7 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 				text_newline = cache->lines[subline].start;
 				need_move = !cache->lines[subline].continues;
 			}
-                        drawcount++;
+			drawcount++;
 			subline++;
 		}
 
@@ -472,10 +472,10 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 			/* command */
 			text++;
 			if (*text == LINE_CMD_EOL)
-                                break;
+				break;
 
 			if (*text == LINE_CMD_CONTINUE) {
-                                /* jump to next block */
+				/* jump to next block */
 				memcpy(&tmp, text+1, sizeof(unsigned char *));
 				text = tmp;
 				continue;
@@ -501,8 +501,7 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 		} else {
 			chr = *text;
 			end = text;
-			if (term_type == TERM_TYPE_BIG5 &&
-			    is_big5(end[0], end[1]))
+			if (term_type == TERM_TYPE_BIG5 && is_big5(end[0], end[1]))
 				char_width = 2;
 			else
 				char_width = 1;
@@ -510,7 +509,7 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 		}
 
 		xpos += char_width;
-		if (xpos <= term_width) {
+		if (xpos <= term_get_width(view->window)) {
 			if (unichar_isprint(chr)) {
 				if (view->utf8)
 				term_add_unichar(view->window, chr);
@@ -527,12 +526,12 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 		text = end;
 	}
 
-	if (need_clrtoeol && xpos < term_width) {
+	if (need_clrtoeol && xpos < term_get_width(view->window)) {
 		term_set_color(view->window, ATTR_RESET);
 		term_clrtoeol(view->window);
 	}
 
-        return drawcount;
+	return drawcount;
 }
 
 /* Recalculate view's bottom line information - try to keep the
@@ -961,8 +960,8 @@ LINE_CACHE_REC *textbuffer_view_get_line_cache(TEXT_BUFFER_VIEW_REC *view,
 {
 	LINE_CACHE_REC *cache;
 
-        g_assert(view != NULL);
-        g_assert(line != NULL);
+	g_assert(view != NULL);
+	g_assert(line != NULL);
 
 	cache = g_hash_table_lookup(view->cache->line_cache, line);
 	if (cache == NULL)

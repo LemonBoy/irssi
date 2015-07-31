@@ -13,10 +13,11 @@ typedef struct {
 	WINDOW_REC *active;
 
 	TERM_WINDOW *screen_win;
-        int sticky_windows; /* number of sticky windows */
+	int sticky_windows; /* number of sticky windows */
 
 	int first_line, last_line; /* first/last line used by this window (0..x) (includes statusbars) */
 	int width, height; /* width/height of the window (includes statusbars) */
+	int first_column, last_column;
 
 	GSList *statusbars;
 	int statusbar_lines_top;
@@ -54,7 +55,5 @@ int mainwindows_reserve_lines(int top, int bottom);
 int mainwindow_set_statusbar_lines(MAIN_WINDOW_REC *window,
 				   int top, int bottom);
 void mainwindows_redraw_dirty(void);
-
-GSList *mainwindows_get_sorted(int reverse);
 
 #endif

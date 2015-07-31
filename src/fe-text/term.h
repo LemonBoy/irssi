@@ -80,6 +80,7 @@ void term_set_color2(TERM_WINDOW *window, int col, unsigned int fgcol24, unsigne
 void term_set_color(TERM_WINDOW *window, int col);
 #endif
 
+int term_get_width(TERM_WINDOW *window);
 void term_move(TERM_WINDOW *window, int x, int y);
 void term_addch(TERM_WINDOW *window, char chr);
 void term_add_unichar(TERM_WINDOW *window, unichar chr);

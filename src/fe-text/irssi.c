@@ -125,10 +125,10 @@ static void dirty_check(void)
 	if (!dirty || dummy)
 		return;
 
-        term_resize_dirty();
+	term_resize_dirty();
 
 	if (full_redraw) {
-                full_redraw = FALSE;
+		full_redraw = FALSE;
 
 		/* first clear the screen so curses will be
 		   forced to redraw the screen */
@@ -140,10 +140,10 @@ static void dirty_check(void)
 	}
 
 	mainwindows_redraw_dirty();
-        statusbar_redraw_dirty();
+	statusbar_redraw_dirty();
 	term_refresh(NULL);
 
-        dirty = FALSE;
+	dirty = FALSE;
 }
 
 static void textui_init(void)

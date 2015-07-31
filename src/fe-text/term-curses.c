@@ -47,7 +47,7 @@
 
 struct _TERM_WINDOW {
 	int x, y;
-        int width, height;
+	int width, height;
 	WINDOW *win;
 };
 
@@ -209,17 +209,17 @@ void term_beep(void)
 /* Create a new window in terminal */
 TERM_WINDOW *term_window_create(int x, int y, int width, int height)
 {
-        TERM_WINDOW *window;
+	TERM_WINDOW *window;
 
 	window = g_new0(TERM_WINDOW, 1);
 	window->x = x; window->y = y;
-        window->width = width; window->height = height;
+	window->width = width; window->height = height;
 	window->win = newwin(height, width, y, x);
 	if (window->win == NULL)
 		g_error("newwin() failed: %d,%d %d,%d", x, y, width, height);
 	idlok(window->win, 1);
 
-        return window;
+	return window;
 }
 
 /* Destroy a terminal window */
