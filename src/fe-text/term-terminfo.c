@@ -282,7 +282,7 @@ void term_window_clear(TERM_WINDOW *window)
 		term_clear();
 	} else {
 		for (y = 0; y < window->height; y++) {
-			term_move(window, window->x, y);
+			term_move(window, 0, y);
 			term_clrtoeol(window);
 		}
 	}
@@ -465,8 +465,8 @@ static void term_printed_text(TERM_WINDOW *window, int count)
 	   the move, otherwise terminals would try to combine the
 	   last word in upper line with first word in lower line. */
 	vcx += count;
-	while (vcx >= term_width) {
-		vcx -= term_width;
+	while (vcx >= window->width) {
+		vcx -= window->width;
 		if (vcy < term_height-1) vcy++;
 		if (vcx > 0) term_lines_empty[vcy] = FALSE;
 	}
