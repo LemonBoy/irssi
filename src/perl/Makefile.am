@@ -123,10 +123,10 @@ EXTRA_DIST = \
 	$(textui_sources)
 
 all-local:
-	for dir in $(perl_dirs); do \
+	$(AM_V_GEN)for dir in $(perl_dirs); do \
 	  cd $$dir && \
 	  if [ ! -f Makefile ]; then \
-	    $(perlpath) Makefile.PL $(PERL_MM_PARAMS); \
+	    echo "  GEN  " $$dir; $(perlpath) Makefile.PL $(PERL_MM_PARAMS) >/dev/null; \
 	  fi && \
 	  ($(MAKE) CC="$(CC)" CCFLAGS="$(PERL_CFLAGS) $(CFLAGS)" $(PERL_EXTRA_OPTS) || \
 	   $(MAKE) CC="$(CC)" CCFLAGS="$(PERL_CFLAGS) $(CFLAGS)" $(PERL_EXTRA_OPTS)) && \
