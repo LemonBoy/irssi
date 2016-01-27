@@ -250,10 +250,10 @@ static void statusbar_calc_item_positions(STATUSBAR_REC *bar)
         if (bar->parent_window != NULL)
 		active_win = bar->parent_window->active;
 
-	statusbar_resize_items(bar, term_width);
+	statusbar_resize_items(bar, active_win? active_win->width: term_width);
 
         /* left-aligned items */
-	xpos = 0;
+	xpos = active_win? WINDOW_MAIN(active_win)->first_column: 0;
 	for (tmp = bar->items; tmp != NULL; tmp = tmp->next) {
 		SBAR_ITEM_REC *rec = tmp->data;
 
@@ -296,7 +296,7 @@ static void statusbar_calc_item_positions(STATUSBAR_REC *bar)
 		}
 	}
 
-	rxpos = term_width;
+	rxpos = active_win? active_win->width: term_width;
 	for (tmp = right_items; tmp != NULL; tmp = tmp->next) {
 		SBAR_ITEM_REC *rec = tmp->data;
 
