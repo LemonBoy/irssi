@@ -145,7 +145,7 @@ static IRC_CHATNET_REC *network_setup_fill_rec(IRC_CHATNET_REC *rec, GHashTable 
 static void cmd_network_add(const char *data)
 {
 	GHashTable *optlist;
-	char *name, *value;
+	char *name;
 	void *free_arg;
 	IRC_CHATNET_REC *rec;
 
@@ -192,7 +192,7 @@ static void cmd_network_add(const char *data)
 static void cmd_network_modify(const char *data)
 {
 	GHashTable *optlist;
-	char *name, *value;
+	char *name;
 	void *free_arg;
 	IRC_CHATNET_REC *rec;
 
