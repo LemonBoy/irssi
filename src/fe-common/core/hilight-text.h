@@ -19,7 +19,6 @@ struct _HILIGHT_REC {
 	unsigned int nickmask:1; /* `text' is a nick mask */
 	unsigned int fullword:1; /* match `text' only for full words */
 	unsigned int regexp:1; /* `text' is a regular expression */
-	unsigned int regexp_compiled:1; /* should always be TRUE, unless regexp is invalid */
 	GRegex *preg;
 	char *servertag;
 };
