@@ -265,17 +265,6 @@ void hash_save_key(char *key, void *value, GSList **list)
         *list = g_slist_append(*list, key);
 }
 
-/* save all keys in hash table to linked list - you shouldn't remove any
-   items while using this list, use g_slist_free() after you're done with it */
-GSList *hashtable_get_keys(GHashTable *hash)
-{
-	GSList *list;
-
-	list = NULL;
-	g_hash_table_foreach(hash, (GHFunc) hash_save_key, &list);
-	return list;
-}
-
 GList *glist_find_string(GList *list, const char *key)
 {
 	for (; list != NULL; list = list->next)

@@ -39,19 +39,19 @@
    Returns -1 if unknown option was given. */
 int cmd_options_get_level(const char *cmd, GHashTable *optlist)
 {
-	GSList *list, *tmp, *next;
+	GList *list, *tmp, *next;
         int level, retlevel;
 
 	/* get all the options, then remove the known ones. there should
 	   be only one left - the server tag. */
-	list = hashtable_get_keys(optlist);
+	list = g_hash_table_get_keys(optlist);
 	if (cmd != NULL) {
 		for (tmp = list; tmp != NULL; tmp = next) {
 			char *option = tmp->data;
 			next = tmp->next;
 
 			if (command_have_option(cmd, option))
-				list = g_slist_remove(list, option);
+				list = g_list_remove(list, option);
 		}
 	}
 
@@ -68,7 +68,7 @@ int cmd_options_get_level(const char *cmd, GHashTable *optlist)
 		}
 
 		retlevel |= level;
-                list = g_slist_remove(list, list->data);
+                list = g_list_remove(list, list->data);
 	}
 
 	return retlevel;
