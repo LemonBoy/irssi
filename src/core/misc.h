@@ -32,9 +32,6 @@ char *gslistptr_to_string(GSList *list, int offset, const char *delimiter);
 /* `list' contains char* */
 char *gslist_to_string(GSList *list, const char *delimiter);
 
-/* easy way to check if regexp matches */
-int regexp_match(const char *str, const char *regexp);
-
 /* convert ~/ to $HOME */
 char *convert_home(const char *path);
 
