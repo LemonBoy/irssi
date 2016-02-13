@@ -104,7 +104,7 @@ static void cmd_ctcp(const char *data, IRC_SERVER_REC *server,
 	if (target == NULL || *target == '\0' || *ctcpcmd == '\0')
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 
-	ascii_strup(ctcpcmd);
+	g_ascii_strup(ctcpcmd, -1);
 	if (*ctcpdata == '\0')
 		g_string_printf(tmpstr, "PRIVMSG %s :\001%s\001", target, ctcpcmd);
 	else {
@@ -138,7 +138,7 @@ static void cmd_nctcp(const char *data, IRC_SERVER_REC *server,
 	if (target == NULL || *target == '\0' || *ctcpcmd == '\0')
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 
-	ascii_strup(ctcpcmd);
+	g_ascii_strup(ctcpcmd, -1);
 	recoded = recode_out(SERVER(server), ctcpdata, target);
 	g_string_printf(tmpstr, "NOTICE %s :\001%s %s\001", target, ctcpcmd, recoded);
 	g_free(recoded);

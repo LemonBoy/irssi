@@ -538,7 +538,7 @@ static char *line_get_command(const char *line, char **args, int aliases)
 	} while (ptr != NULL);
 
         if (cmd != NULL)
-		ascii_strdown(cmd);
+		g_ascii_strdown(cmd, -1);
 	return cmd;
 }
 

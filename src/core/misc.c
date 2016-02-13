@@ -892,24 +892,6 @@ int parse_size(const char *size, int *bytes)
 	return TRUE;
 }
 
-char *ascii_strup(char *str)
-{
-	char *s;
-
-	for (s = str; *s; s++)
-		*s = g_ascii_toupper (*s);
-	return str;
-}
-
-char *ascii_strdown(char *str)
-{
-	char *s;
-
-	for (s = str; *s; s++)
-		*s = g_ascii_tolower (*s);
-	return str;
-}
-
 char **strsplit_len(const char *str, int len, gboolean onspace)
 {
 	char **ret = g_new(char *, 1);

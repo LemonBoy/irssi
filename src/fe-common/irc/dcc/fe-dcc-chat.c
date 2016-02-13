@@ -331,7 +331,7 @@ static void cmd_ctcp(const char *data, SERVER_REC *server)
 		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
 			    IRCTXT_DCC_CHAT_NOT_FOUND, target+1);
 	} else {
-		ascii_strup(ctcpcmd);
+		g_ascii_strup(ctcpcmd, -1);
 		signal_emit("message dcc own_ctcp", 3, dcc, ctcpcmd, ctcpdata);
 	}
 
