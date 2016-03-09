@@ -325,11 +325,11 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *text,
 	if (dest->level & MSGLEVEL_NOHILIGHT)
 		return;
 
-        hilight_start = hilight_end = 0;
-	hilight = hilight_match(dest->server, dest->target,
-				NULL, NULL, dest->level, stripped,
-				&hilight_start,
-				&hilight_end);
+	hilight_start = hilight_end = 0;
+	hilight = hilight_match(dest->server, dest->target, dest->nick,
+				dest->address, dest->level, stripped,
+				&hilight_start, &hilight_end);
+
 	if (hilight == NULL)
 		return;
 
@@ -484,10 +484,14 @@ static void hilight_print(int index, HILIGHT_REC *rec)
 	GString *options;
 
 	options = g_string_new(NULL);
-	if (!rec->nick || !rec->word) {
-		if (rec->nick) g_string_append(options, "-nick ");
-		if (rec->word) g_string_append(options, "-word ");
-	}
+
+	if (rec->nick && rec->word) { /* default case, no option */ }
+	else if (rec->nick)
+		g_string_append(options, "-nick ");
+	else if (rec->word)
+		g_string_append(options, "-word ");
+	else
+		g_string_append(options, "-line ");
 
 	if (rec->nickmask) g_string_append(options, "-mask ");
 	if (rec->fullword) g_string_append(options, "-full ");

@@ -6,6 +6,8 @@
 #define IRSSI_GLOBAL_CONFIG "irssi.conf" /* config file name in /etc/ */
 #define IRSSI_HOME_CONFIG "config" /* config file name in ~/.irssi/ */
 
+#define IRSSI_ABI_VERSION 2
+
 #define DEFAULT_SERVER_ADD_PORT 6667
 
 #ifdef HAVE_CONFIG_H
@@ -34,9 +36,6 @@
 #  include <dirent.h>
 #endif
 #include <fcntl.h>
-#ifdef WIN32
-#  include <win32-compat.h>
-#endif
 
 #include <glib.h>
 #ifdef HAVE_GMODULE

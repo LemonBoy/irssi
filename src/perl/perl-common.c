@@ -246,10 +246,7 @@ char *perl_get_use_list(void)
 
 void irssi_callXS(void (*subaddr)(pTHX_ CV* cv), CV *cv, SV **mark)
 {
-	dSP;
-
 	PUSHMARK(mark);
-	PUTBACK;
 
 	(*subaddr)(aTHX_ cv);
 }
@@ -351,10 +348,12 @@ void perl_window_item_fill_hash(HV *hv, WI_ITEM_REC *item)
         g_return_if_fail(item != NULL);
 
 	type = (char *) module_find_id_str("WINDOW ITEM TYPE", item->type);
-	chat_type = (char *) chat_protocol_find_id(item->chat_type)->name;
 
 	(void) hv_store(hv, "type", 4, new_pv(type), 0);
-	(void) hv_store(hv, "chat_type", 9, new_pv(chat_type), 0);
+	if (item->chat_type) {
+		chat_type = (char *) chat_protocol_find_id(item->chat_type)->name;
+		(void) hv_store(hv, "chat_type", 9, new_pv(chat_type), 0);
+	}
 
 	if (item->server != NULL) {
 		(void) hv_store(hv, "server", 6, iobject_bless(item->server), 0);

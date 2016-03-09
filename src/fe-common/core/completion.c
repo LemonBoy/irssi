@@ -217,6 +217,11 @@ char *word_complete(WINDOW_REC *window, const char *line, int *pos, int erase, i
 		want_space = TRUE;
 		signal_emit("complete word", 5, &complist, window, word, linestart, &want_space);
 		last_want_space = want_space;
+
+		if (complist != NULL) {
+			/* Remove all nulls (from the signal) before doing further processing */
+			complist = g_list_remove_all(g_list_first(complist), NULL);
+		}
 	}
 
 	g_free(linestart);
@@ -362,8 +367,7 @@ static GList *completion_get_settings(const char *key, SettingType type)
 	for (tmp = sets; tmp != NULL; tmp = tmp->next) {
 		SETTINGS_REC *rec = tmp->data;
 
-		if ((type == -1 || rec->type == type) &&
-		    g_ascii_strncasecmp(rec->key, key, len) == 0)
+		if ((type == SETTING_TYPE_ANY || rec->type == type) && g_ascii_strncasecmp(rec->key, key, len) == 0)
 			complist = g_list_insert_sorted(complist, g_strdup(rec->key), (GCompareFunc) g_istr_cmp);
 	}
 	g_slist_free(sets);
@@ -682,7 +686,7 @@ static void sig_complete_set(GList **list, WINDOW_REC *window,
 
 	if (*line == '\0' ||
 	    !g_strcmp0("-clear", line) || !g_strcmp0("-default", line))
-		*list = completion_get_settings(word, -1);
+		*list = completion_get_settings(word, SETTING_TYPE_ANY);
 	else if (*line != '\0' && *word == '\0') {
 		SETTINGS_REC *rec = settings_get_record(line);
 		if (rec != NULL) {
@@ -758,7 +762,7 @@ static void cmd_completion(const char *data)
 	int len;
 
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_OPTIONS |
-			    PARAM_FLAG_GETREST,
+			    PARAM_FLAG_GETREST | PARAM_FLAG_STRIP_TRAILING_WS,
 			    "completion", &optlist, &key, &value))
 		return;
 

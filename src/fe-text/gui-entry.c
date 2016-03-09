@@ -26,6 +26,7 @@
 #include "gui-entry.h"
 #include "gui-printtext.h"
 #include "term.h"
+#include "recode.h"
 
 #undef i_toupper
 #undef i_tolower
@@ -35,21 +36,21 @@ static unichar i_toupper(unichar c)
 {
 	if (term_type == TERM_TYPE_UTF8)
 		return g_unichar_toupper(c);
-	return (c >= 0 && c <= 255) ? toupper(c) : c;
+	return c <= 255 ? toupper(c) : c;
 }
 
 static unichar i_tolower(unichar c)
 {
 	if (term_type == TERM_TYPE_UTF8)
 		return g_unichar_tolower(c);
-	return (c >= 0 && c <= 255) ? tolower(c) : c;
+	return c <= 255 ? tolower(c) : c;
 }
 
 static int i_isalnum(unichar c)
 {
 	if (term_type == TERM_TYPE_UTF8)
 		return (g_unichar_isalnum(c) || mk_wcwidth(c) == 0);
-	return (c >= 0 && c <= 255) ? isalnum(c) : 0;
+	return c <= 255 ? isalnum(c) : 0;
 }
 
 GUI_ENTRY_REC *active_entry;
@@ -345,6 +346,33 @@ void gui_entry_set_active(GUI_ENTRY_REC *entry)
 	}
 }
 
+/* Return screen length of plain string */
+static int scrlen_str(const char *str)
+{
+	int len = 0;
+	char *stripped;
+	g_return_val_if_fail(str != NULL, 0);
+
+	str = stripped = strip_codes(str);
+	if (is_utf8() && g_utf8_validate(str, -1, NULL)) {
+
+		while (*str != '\0') {
+			gunichar c;
+
+			c = g_utf8_get_char(str);
+			str = g_utf8_next_char(str);
+
+			len += unichar_isprint(c) ? mk_wcwidth(c) : 1;
+		}
+
+	} else {
+		len = strlen(str);
+	}
+
+	g_free(stripped);
+	return len;
+}
+
 void gui_entry_set_prompt(GUI_ENTRY_REC *entry, const char *str)
 {
 	int oldlen;
@@ -355,11 +383,11 @@ void gui_entry_set_prompt(GUI_ENTRY_REC *entry, const char *str)
 	if (str != NULL) {
 		g_free_not_null(entry->prompt);
 		entry->prompt = g_strdup(str);
-		entry->promptlen = format_get_length(str);
+		entry->promptlen = scrlen_str(str);
 	}
 
         if (entry->prompt != NULL)
-		gui_printtext(entry->xpos, entry->ypos, entry->prompt);
+		gui_printtext_internal(entry->xpos, entry->ypos, entry->prompt);
 
 	if (entry->promptlen != oldlen) {
 		gui_entry_fix_cursor(entry);
@@ -534,7 +562,7 @@ char *gui_entry_get_cutbuffer(GUI_ENTRY_REC *entry)
 	return buf;
 }
 
-void gui_entry_erase_to(GUI_ENTRY_REC *entry, int pos, int update_cutbuffer)
+void gui_entry_erase_to(GUI_ENTRY_REC *entry, int pos, CUTBUFFER_UPDATE_OP update_cutbuffer)
 {
 	int newpos, size = 0;
 
@@ -545,7 +573,7 @@ void gui_entry_erase_to(GUI_ENTRY_REC *entry, int pos, int update_cutbuffer)
 	gui_entry_erase(entry, size, update_cutbuffer);
 }
 
-void gui_entry_erase(GUI_ENTRY_REC *entry, int size, int update_cutbuffer)
+void gui_entry_erase(GUI_ENTRY_REC *entry, int size, CUTBUFFER_UPDATE_OP update_cutbuffer)
 {
 	size_t w = 0;
 
@@ -554,17 +582,50 @@ void gui_entry_erase(GUI_ENTRY_REC *entry, int size, int update_cutbuffer)
 	if (size == 0 || entry->pos < size)
 		return;
 
-	if (update_cutbuffer) {
-		/* put erased text to cutbuffer */
-		if (entry->cutbuffer_len < size) {
-			g_free(entry->cutbuffer);
-			entry->cutbuffer = g_new(unichar, size+1);
-		}
+	if (entry->cutbuffer_len == 0) {
+		update_cutbuffer = CUTBUFFER_UPDATE_REPLACE;
+	}
+	int cutbuffer_new_size = entry->cutbuffer_len + size;
+	unichar *tmpcutbuffer = entry->cutbuffer;
+	switch (update_cutbuffer) {
+		case CUTBUFFER_UPDATE_APPEND:
+			entry->cutbuffer = g_new(unichar, cutbuffer_new_size+1);
+			memcpy(entry->cutbuffer, tmpcutbuffer,
+					entry->cutbuffer_len * sizeof(unichar));
+			memcpy(entry->cutbuffer + entry->cutbuffer_len * sizeof(unichar),
+					entry->text + entry->pos - size, size * sizeof(unichar));
 
-		entry->cutbuffer_len = size;
-		entry->cutbuffer[size] = '\0';
-		memcpy(entry->cutbuffer, entry->text + entry->pos - size,
-		       size * sizeof(unichar));
+			entry->cutbuffer_len = cutbuffer_new_size;
+			entry->cutbuffer[cutbuffer_new_size] = '\0';
+			g_free(tmpcutbuffer);
+			break;
+
+		case CUTBUFFER_UPDATE_PREPEND:
+			entry->cutbuffer = g_new(unichar, cutbuffer_new_size+1);
+			memcpy(entry->cutbuffer, entry->text + entry->pos - size,
+					size * sizeof(unichar));
+			memcpy(entry->cutbuffer + size, tmpcutbuffer,
+					entry->cutbuffer_len * sizeof(unichar));
+
+			entry->cutbuffer_len = cutbuffer_new_size;
+			entry->cutbuffer[cutbuffer_new_size] = '\0';
+			g_free(tmpcutbuffer);
+			break;
+
+		case CUTBUFFER_UPDATE_REPLACE:
+			/* put erased text to cutbuffer */
+			if (entry->cutbuffer_len < size) {
+				g_free(entry->cutbuffer);
+				entry->cutbuffer = g_new(unichar, size+1);
+			}
+
+			entry->cutbuffer_len = size;
+			entry->cutbuffer[size] = '\0';
+			memcpy(entry->cutbuffer, entry->text + entry->pos - size, size * sizeof(unichar));
+			break;
+
+		case CUTBUFFER_UPDATE_NOOP:
+			break;
 	}
 
 	if (entry->utf8)
@@ -601,7 +662,7 @@ void gui_entry_erase_cell(GUI_ENTRY_REC *entry)
 	gui_entry_draw(entry);
 }
 
-void gui_entry_erase_word(GUI_ENTRY_REC *entry, int to_space)
+void gui_entry_erase_word(GUI_ENTRY_REC *entry, int to_space, CUTBUFFER_UPDATE_OP cutbuffer_op)
 {
 	int to;
 
@@ -624,7 +685,7 @@ void gui_entry_erase_word(GUI_ENTRY_REC *entry, int to_space)
 	}
 	if (to > 0) to++;
 
-        gui_entry_erase(entry, entry->pos-to, TRUE);
+	gui_entry_erase(entry, entry->pos-to, CUTBUFFER_UPDATE_REPLACE);
 }
 
 void gui_entry_erase_next_word(GUI_ENTRY_REC *entry, int to_space)
@@ -650,7 +711,7 @@ void gui_entry_erase_next_word(GUI_ENTRY_REC *entry, int to_space)
 
         size = to-entry->pos;
 	entry->pos = to;
-        gui_entry_erase(entry, size, TRUE);
+        gui_entry_erase(entry, size, CUTBUFFER_UPDATE_REPLACE);
 }
 
 void gui_entry_transpose_chars(GUI_ENTRY_REC *entry)

@@ -97,8 +97,8 @@ static int ignore_match_pattern(IGNORE_REC *rec, const char *text)
 		match_wildcards((rec)->mask, nick)))
 
 #define ignore_match_server(rec, server) \
-	((rec)->servertag == NULL || \
-	g_ascii_strcasecmp((server)->tag, (rec)->servertag) == 0)
+	((rec)->servertag == NULL || ((server) != NULL && \
+		g_ascii_strcasecmp((server)->tag, (rec)->servertag) == 0))
 
 #define ignore_match_channel(rec, channel) \
 	((rec)->channels == NULL || ((channel) != NULL && \
@@ -135,7 +135,6 @@ int ignore_check(SERVER_REC *server, const char *nick, const char *host,
         char *nickmask;
         int len, best_mask, best_match, best_patt;
 
-	g_return_val_if_fail(server != NULL, 0);
         if (nick == NULL) nick = "";
 
 	chanrec = server == NULL || channel == NULL ? NULL :
@@ -187,15 +186,8 @@ int ignore_check(SERVER_REC *server, const char *nick, const char *host,
         return ignore_check_replies(chanrec, text, level);
 }
 
-IGNORE_REC *ignore_find(const char *servertag, const char *mask,
-		char **channels)
-{
-	return ignore_find_noact(servertag, mask, channels, 0);
-}
-
-
-IGNORE_REC *ignore_find_noact(const char *servertag, const char *mask,
-		char **channels, int noact)
+IGNORE_REC *ignore_find_full(const char *servertag, const char *mask, const char *pattern,
+		char **channels, const int flags)
 {
 	GSList *tmp;
 	char **chan;
@@ -217,17 +209,28 @@ IGNORE_REC *ignore_find_noact(const char *servertag, const char *mask,
 				continue;
 		}
 
-		if (noact && (rec->level & MSGLEVEL_NO_ACT) == 0)
+		if ((flags & IGNORE_FIND_NOACT) && (rec->level & MSGLEVEL_NO_ACT) == 0)
 			continue;
 
-		if (!noact && (rec->level & MSGLEVEL_NO_ACT) != 0)
+		if (!(flags & IGNORE_FIND_NOACT) && (rec->level & MSGLEVEL_NO_ACT) != 0)
 			continue;
 
 		if ((rec->mask == NULL && mask != NULL) ||
-		    (rec->mask != NULL && mask == NULL)) continue;
+		    (rec->mask != NULL && mask == NULL))
+			continue;
 
 		if (rec->mask != NULL && g_ascii_strcasecmp(rec->mask, mask) != 0)
 			continue;
+
+		/* match the pattern too if requested */
+		if (flags & IGNORE_FIND_PATTERN) {
+			if ((rec->pattern == NULL && pattern != NULL) ||
+			    (rec->pattern != NULL && pattern == NULL))
+				continue;
+
+			if (rec->pattern != NULL && g_ascii_strcasecmp(rec->pattern, pattern) != 0)
+				continue;
+		}
 
 		if ((channels == NULL && rec->channels == NULL))
 			return rec; /* no channels - ok */
@@ -252,6 +255,16 @@ IGNORE_REC *ignore_find_noact(const char *servertag, const char *mask,
 	}
 
 	return NULL;
+}
+
+IGNORE_REC *ignore_find(const char *servertag, const char *mask, char **channels)
+{
+	return ignore_find_full(servertag, mask, NULL, channels, 0);
+}
+
+IGNORE_REC *ignore_find_noact(const char *servertag, const char *mask, char **channels, int noact)
+{
+	return ignore_find_full(servertag, mask, NULL, channels, IGNORE_FIND_NOACT);
 }
 
 static void ignore_set_config(IGNORE_REC *rec)

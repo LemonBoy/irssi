@@ -214,10 +214,12 @@ static void sig_message_public(SERVER_REC *server, const char *msg,
 	if (printnick == NULL)
 		printnick = nick;
 
+	TEXT_DEST_REC dest;
+	format_create_dest(&dest, server, target, level, NULL);
+	dest.address = address;
+	dest.nick = nick;
 	if (color != NULL) {
 		/* highlighted nick */
-		TEXT_DEST_REC dest;
-		format_create_dest(&dest, server, target, level, NULL);
 		hilight_update_text_dest(&dest,hilight);
 		if (!print_channel) /* message to active channel in window */
 			printformat_dest(&dest, TXT_PUBMSG_HILIGHT, color,
@@ -228,11 +230,11 @@ static void sig_message_public(SERVER_REC *server, const char *msg,
 					 nickmode);
 	} else {
 		if (!print_channel)
-			printformat(server, target, level,
+			printformat_dest(&dest,
 				    for_me ? TXT_PUBMSG_ME : TXT_PUBMSG,
 				    printnick, msg, nickmode);
 		else
-			printformat(server, target, level,
+			printformat_dest(&dest,
 				    for_me ? TXT_PUBMSG_ME_CHANNEL :
 				    TXT_PUBMSG_CHANNEL,
 				    printnick, target, msg, nickmode);

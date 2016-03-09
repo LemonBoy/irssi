@@ -430,11 +430,7 @@ int mkpath(const char *path, int mode)
 
 		dir = g_strndup(path, (int) (p-path));
 		if (stat(dir, &statbuf) != 0) {
-#ifndef WIN32
 			if (mkdir(dir, mode) == -1)
-#else
-			if (_mkdir(dir) == -1)
-#endif
 			{
 				g_free(dir);
 				return -1;
@@ -997,22 +993,22 @@ char **strsplit_len(const char *str, int len, gboolean onspace)
 	int n;
 	int offset;
 
-	for (n = 0; *str != '\0'; n++, str += MIN(len - offset, strlen(str))) {
-		offset = 0;
-		if (onspace) {
+	for (n = 0; *str != '\0'; n++, str += offset) {
+		offset = MIN(len, strlen(str));
+		if (onspace && strlen(str) > len) {
 			/*
 			 * Try to find a space to split on and leave
 			 * the space on the previous line.
 			 */
 			int i;
-			for (i = 0; i < len; i++) {
-				if (str[len-1-i] == ' ') {
+			for (i = len - 1; i > 0; i--) {
+				if (str[i] == ' ') {
 					offset = i;
 					break;
 				}
 			}
 		}
-		ret[n] = g_strndup(str, len - offset);
+		ret[n] = g_strndup(str, offset);
 		ret = g_renew(char *, ret, n + 2);
 	}
 	ret[n] = NULL;
