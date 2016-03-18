@@ -235,7 +235,7 @@ static void print_netjoins(NETJOIN_SERVER_REC *server)
 
 /* something is going to be printed to screen, print our current netsplit
    message before it. */
-static void sig_print_starting(void)
+static void sig_print_starting(TEXT_DEST_REC *dest)
 {
 	GSList *tmp, *next;
 
