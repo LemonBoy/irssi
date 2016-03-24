@@ -358,7 +358,7 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *text,
 	color = hilight_get_color(hilight);
 	hilight_len = hilight_end-hilight_start;
 
-	if (!hilight->word) {
+	if (hilight->word == FALSE) {
 		/* hilight whole line */
 		char *tmp = strip_codes(text);
 		newstr = g_strconcat(color, tmp, NULL);
@@ -373,30 +373,27 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *text,
 
                 /* start of the line */
 		pos = strip_real_length(text, hilight_start, NULL, NULL);
-		g_string_append(tmp, text);
-                g_string_truncate(tmp, pos);
+		tmp = g_string_new_len(text, pos);
 
 		/* color */
                 g_string_append(tmp, color);
 
 		/* middle of the line, stripped */
-		middle = strip_codes(text+pos);
-                pos = tmp->len;
-		g_string_append(tmp, middle);
-                g_string_truncate(tmp, pos+hilight_len);
+		middle = strip_codes(text + pos);
+		g_string_append_len(tmp, middle, hilight_len);
                 g_free(middle);
 
 		/* end of the line */
 		pos = strip_real_length(text, hilight_end,
 					&color_pos, &color_len);
 		if (color_pos > 0)
-			g_string_append_len(tmp, text+color_pos, color_len);
+			g_string_append_len(tmp, text + color_pos, color_len);
                 else {
                         /* no colors in line, change back to default */
 			g_string_append_c(tmp, 4);
 			g_string_append_c(tmp, FORMAT_STYLE_DEFAULTS);
 		}
-		g_string_append(tmp, text+pos);
+		g_string_append(tmp, text + pos);
 
                 newstr = tmp->str;
                 g_string_free(tmp, FALSE);
