@@ -559,6 +559,9 @@ COMMON_LIBS="$FE_COMMON_LIBS $COMMON_NOUI_LIBS"
 AC_SUBST(COMMON_NOUI_LIBS)
 AC_SUBST(COMMON_LIBS)
 
+AC_DEFINE([HAVE_GETDNS], [], [getdns support])
+LIBS="$LIBS -lgetdns"
+
 if test "x$want_truecolor" = "xyes" -a "x$want_termcap" != "xyes" -a "x$want_terminfo" = "xyes" ; then
 	AC_DEFINE([TERM_TRUECOLOR], [], [true color support in terminal])
 else

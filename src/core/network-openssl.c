@@ -87,6 +87,43 @@ static const char *tls_dns_name(const GENERAL_NAME * gn)
 	return dnsname;
 }
 
+#include <getdns/getdns.h>
+#include <getdns/getdns_extra.h>
+
+static gboolean verify_tlsa_record(SSL *ssl, const char *hostname, int port)
+{
+	char domain[4096];
+	getdns_return_t rc;
+	getdns_context *ctx;
+	getdns_dict *ext, *res;
+
+	ext = getdns_dict_create();
+	getdns_dict_set_int(ext, "dnssec_return_only_secure", GETDNS_EXTENSION_TRUE);
+
+	/* Generate the domain name for the TLSA query as specified in
+	 * https://tools.ietf.org/html/rfc6698#section-3 */
+	snprintf(domain, sizeof(domain), "_%d._tcp.%s", port, hostname);
+
+	g_warning("Domain : %s", domain);
+
+	getdns_context_create(&ctx, TRUE);
+	rc = getdns_general_sync(ctx, domain, GETDNS_RRTYPE_TLSA, ext, &res);
+
+	if (rc != GETDNS_RETURN_GOOD) {
+		g_warning("%s", getdns_get_errorstr_by_id(rc));
+		return FALSE;
+	}
+
+	char *tmp = getdns_print_json_dict(res, TRUE);
+	g_warning(tmp);
+	free(tmp);
+
+	getdns_dict_destroy(ext);
+	getdns_dict_destroy(res);
+
+	return FALSE;
+}
+
 /* tls_text_name - extract certificate property value by name */
 static char *tls_text_name(X509_NAME *name, int nid)
 {
@@ -201,6 +238,8 @@ static gboolean irssi_ssl_verify_hostname(X509 *cert, const char *hostname)
 static gboolean irssi_ssl_verify(SSL *ssl, SSL_CTX *ctx, const char* hostname, int port, X509 *cert, SERVER_REC *server)
 {
 	long result;
+
+	verify_tlsa_record(NULL, hostname, port);
 
 	result = SSL_get_verify_result(ssl);
 	if (result != X509_V_OK) {
