@@ -20,6 +20,7 @@
 
 #include "module.h"
 #include "network.h"
+#include "misc.h"
 
 #include <sys/un.h>
 
@@ -117,7 +118,7 @@ GIOChannel *net_connect(const char *addr, int port, IPADDR *my_ip)
 
 	g_return_val_if_fail(addr != NULL, NULL);
 
-	if (net_gethostbyname(addr, &ip4, &ip6) == -1)
+	if (net_gethostbyname_(addr, &ip4, &ip6) == -1)
 		return NULL;
 
 	if (my_ip == NULL) {
@@ -374,19 +375,15 @@ int net_getsockname(GIOChannel *handle, IPADDR *addr, int *port)
 	return 0;
 }
 
-/* Get IP addresses for host, both IPv4 and IPv6 if possible.
-   If ip->family is 0, the address wasn't found.
-   Returns 0 = ok, others = error code for net_gethosterror() */
-int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
+int net_gethostbyname(const char *addr, GSList **resolv)
 {
 	union sockaddr_union *so;
 	struct addrinfo hints, *ai, *ailist;
-	int ret, count_v4, count_v6, use_v4, use_v6;
+	int ret;
+
+	*resolv = NULL;
 
 	g_return_val_if_fail(addr != NULL, -1);
-
-	memset(ip4, 0, sizeof(IPADDR));
-	memset(ip6, 0, sizeof(IPADDR));
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_socktype = SOCK_STREAM;
@@ -397,12 +394,46 @@ int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 	if (ret != 0)
 		return ret;
 
+	for (ai = ailist; ai != NULL; ai = ai->ai_next) {
+		so = (union sockaddr_union *) ai->ai_addr;
+
+		if (ai->ai_family == AF_INET || ai->ai_family == AF_INET6) {
+			IPADDR *new = g_new(IPADDR, 1);
+			sin_get_ip(so, new);
+
+			*resolv = g_slist_prepend(*resolv, new);
+		}
+	}
+
+	freeaddrinfo(ailist);
+
+	return 0;
+}
+
+/* Get IP addresses for host, both IPv4 and IPv6 if possible.
+   If ip->family is 0, the address wasn't found.
+   Returns 0 = ok, others = error code for net_gethosterror() */
+int net_gethostbyname_(const char *addr, IPADDR *ip4, IPADDR *ip6)
+{
+	GSList *resolv, *tmp;
+	int ret, use_v4, use_v6, count_v4, count_v6;
+	IPADDR *ip;
+
+	memset(ip4, 0, sizeof(IPADDR));
+	memset(ip6, 0, sizeof(IPADDR));
+
+	ret = net_gethostbyname(addr, &resolv);
+	if (ret != 0)
+		return ret;
+
 	/* count IPs */
         count_v4 = count_v6 = 0;
-	for (ai = ailist; ai != NULL; ai = ai->ai_next) {
-		if (ai->ai_family == AF_INET)
+	for (tmp = resolv; tmp != NULL; tmp = tmp->next) {
+		ip = (IPADDR *)tmp->data;
+
+		if (ip->family == AF_INET)
 			count_v4++;
-		else if (ai->ai_family == AF_INET6)
+		else if (ip->family == AF_INET6)
 			count_v6++;
 	}
 
@@ -414,20 +445,23 @@ int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 	use_v6 = count_v6 <= 1 ? 0 : rand() % count_v6;
 
 	count_v4 = count_v6 = 0;
-	for (ai = ailist; ai != NULL; ai = ai->ai_next) {
-		so = (union sockaddr_union *) ai->ai_addr;
+	for (tmp = resolv; tmp != NULL; tmp = tmp->next) {
+		ip = (IPADDR *)tmp->data;
 
-		if (ai->ai_family == AF_INET) {
+		if (ip->family == AF_INET) {
 			if (use_v4 == count_v4)
-				sin_get_ip(so, ip4);
-                        count_v4++;
-		} else if (ai->ai_family == AF_INET6) {
+				memcpy(ip4, ip, sizeof(IPADDR));
+			count_v4++;
+		}
+		else if (ip->family == AF_INET6) {
 			if (use_v6 == count_v6)
-				sin_get_ip(so, ip6);
+				memcpy(ip6, ip, sizeof(IPADDR));
 			count_v6++;
 		}
 	}
-	freeaddrinfo(ailist);
+
+	gslist_free_full(resolv, g_free);
+
 	return 0;
 }
 

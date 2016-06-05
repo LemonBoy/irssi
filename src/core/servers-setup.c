@@ -66,7 +66,7 @@ static void get_source_host_ip(void)
 	/* FIXME: This will block! */
         hostname = settings_get_str("hostname");
 	source_host_ok = *hostname != '\0' &&
-		net_gethostbyname(hostname, &ip4, &ip6) == 0;
+		net_gethostbyname_(hostname, &ip4, &ip6) == 0;
 
 	if (source_host_ok)
 		save_ips(&ip4, &ip6, &source_host_ip4, &source_host_ip6);
@@ -83,7 +83,7 @@ static void conn_set_ip(SERVER_CONNECT_REC *conn, const char *own_host,
 
 	if (*own_ip4 == NULL && *own_ip6 == NULL) {
 		/* resolve the IP */
-		if (net_gethostbyname(own_host, &ip4, &ip6) == 0)
+		if (net_gethostbyname_(own_host, &ip4, &ip6) == 0)
                         save_ips(&ip4, &ip6, own_ip4, own_ip6);
 	}
 

@@ -137,7 +137,7 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
 	if (host != NULL && *host != '\0') {
 		IPADDR ip4, ip6;
 
-		if (net_gethostbyname(host, &ip4, &ip6) == 0)
+		if (net_gethostbyname_(host, &ip4, &ip6) == 0)
                         server_connect_own_ip_save(conn, &ip4, &ip6);
 	}
 

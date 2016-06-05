@@ -99,7 +99,7 @@ int net_gethostbyname_nonblock(const char *addr, GIOChannel *pipe,
 	srand(time(NULL));
 
         memset(&rec, 0, sizeof(rec));
-	rec.error = net_gethostbyname(addr, &rec.ip4, &rec.ip6);
+	rec.error = net_gethostbyname_(addr, &rec.ip4, &rec.ip6);
 	if (rec.error == 0) {
 		errorstr = NULL;
 		if (reverse_lookup) {
