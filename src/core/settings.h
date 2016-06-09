@@ -28,6 +28,13 @@ typedef struct {
 	SettingValue default_value;
 } SETTINGS_REC;
 
+typedef enum {
+	TINVALID = -1,
+	TOFF = 0,
+	TON = 1,
+	TALT = 2
+} SettingTernary;
+
 /* macros for handling the default Irssi configuration */
 #define iconfig_get_str(a, b, c) config_get_str(mainconfig, a, b, c)
 #define iconfig_get_int(a, b, c) config_get_int(mainconfig, a, b, c)
@@ -58,6 +65,7 @@ int settings_get_bool(const char *key);
 int settings_get_time(const char *key); /* as milliseconds */
 int settings_get_level(const char *key);
 int settings_get_size(const char *key); /* as bytes */
+SettingTernary settings_get_ternary(const char *key, const char *alt);
 char *settings_get_print(SETTINGS_REC *rec);
 
 /* Functions to add/remove settings */

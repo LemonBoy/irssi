@@ -48,7 +48,7 @@ static int completion_auto, completion_strict;
  * 1 = Match the case
  * 2 = Don't match the case unless the user typed at least a uppercase letter
  */
-static int completion_match_case;
+static SettingTernary completion_match_case;
 
 #define SERVER_LAST_MSG_ADD(server, nick) \
 	last_msg_add(&((MODULE_SERVER_REC *) MODULE_DATA(server))->lastmsgs, \
@@ -460,8 +460,8 @@ static GList *completion_channel_nicks(CHANNEL_REC *channel, const char *nick,
 	if (suffix != NULL && *suffix == '\0')
 		suffix = NULL;
 
-	match_case = completion_match_case == 1 ||
-		(completion_match_case == 2 && contains_uppercase(nick));
+	match_case = completion_match_case == TON ||
+		(completion_match_case == TALT && contains_uppercase(nick));
 
 	/* put first the nicks who have recently said something */
 	list = NULL;
@@ -1150,8 +1150,6 @@ static void sig_channel_destroyed(CHANNEL_REC *channel)
 
 static void read_settings(void)
 {
-	char ch;
-
 	keep_privates_count = settings_get_int("completion_keep_privates");
 	keep_publics_count = settings_get_int("completion_keep_publics");
 	completion_lowercase = settings_get_bool("completion_nicks_lowercase");
@@ -1159,18 +1157,10 @@ static void read_settings(void)
 	completion_auto = settings_get_bool("completion_auto");
 	completion_strict = settings_get_bool("completion_strict");
 
-	ch = *settings_get_str("completion_match_case");
-	switch (i_toupper(ch)) {
-		case 'A': // Auto
-			completion_match_case = 2;
-			break;
-		case 'Y': // Yes
-			completion_match_case = 1;
-			break;
-		case 'N': // No
-			completion_match_case = 0;
-			break;
-	}
+	completion_match_case = settings_get_ternary("completion_match_case", "auto");
+	// In case of error just revert to the default value */
+	if (completion_match_case == TINVALID)
+		completion_match_case = TON;
 
 	g_free_not_null(completion_char);
 	completion_char = g_strdup(settings_get_str("completion_char"));

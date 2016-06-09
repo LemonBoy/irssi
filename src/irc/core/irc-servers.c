@@ -623,39 +623,40 @@ char *irc_server_get_channels(IRC_SERVER_REC *server)
 	GString *chans, *keys;
 	char *ret;
 	int use_keys;
-	char *rejoin_channels_mode;
+	int rejoin_channels_mode;
 
 	g_return_val_if_fail(server != NULL, FALSE);
 
-	rejoin_channels_mode = g_strdup(settings_get_str("rejoin_channels_on_reconnect"));
+	enum {
+		OFF = 0,
+		ON,
+		AUTO
+	};
 
-	if (rejoin_channels_mode == NULL ||
-	    (g_ascii_strcasecmp(rejoin_channels_mode, "on") != 0 &&
-	     g_ascii_strcasecmp(rejoin_channels_mode, "off") != 0 &&
-	     g_ascii_strcasecmp(rejoin_channels_mode, "auto") != 0)) {
+	/* here 0 means OFF, 1 means ON and 2 means AUTO. -1 is returned if the
+	 * specified option is invalid. */
+	rejoin_channels_mode = settings_get_ternary("rejoin_channels_on_reconnect", "auto");
+
+	if (rejoin_channels_mode == TINVALID) {
 		g_warning("Invalid value for 'rejoin_channels_on_reconnect', valid values are 'on', 'off', 'auto', using 'on' as default value.");
-		g_free(rejoin_channels_mode);
-		rejoin_channels_mode = g_strdup("on");
+		rejoin_channels_mode = TON;
+	}
+
+	/* do we want to rejoin channels in the first place? */
+	if(rejoin_channels_mode == TOFF) {
+		return g_strdup("");
 	}
 
 	chans = g_string_new(NULL);
 	keys = g_string_new(NULL);
 	use_keys = FALSE;
 
-	/* do we want to rejoin channels in the first place? */
-	if(g_ascii_strcasecmp(rejoin_channels_mode, "off") == 0) {
-		g_string_free(chans, TRUE);
-		g_string_free(keys, TRUE);
-		g_free(rejoin_channels_mode);
-		return g_strdup("");
-	}
-
 	/* get currently joined channels */
 	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
 		CHANNEL_REC *channel = tmp->data;
 		CHANNEL_SETUP_REC *setup = channel_setup_find(channel->name, channel->server->connrec->chatnet);
-		if ((setup != NULL && setup->autojoin && g_ascii_strcasecmp(rejoin_channels_mode, "auto") == 0) ||
-		    g_ascii_strcasecmp(rejoin_channels_mode, "on") == 0) {
+		if ((setup != NULL && setup->autojoin && rejoin_channels_mode == TALT) ||
+		    rejoin_channels_mode == TON) {
 			g_string_append_printf(chans, "%s,", channel->name);
 			g_string_append_printf(keys, "%s,", channel->key == NULL ? "x" : channel->key);
 			if (channel->key != NULL)
@@ -668,8 +669,8 @@ char *irc_server_get_channels(IRC_SERVER_REC *server)
 		REJOIN_REC *rec = tmp->data;
 		CHANNEL_SETUP_REC *setup = channel_setup_find(rec->channel, server->tag);
 
-		if ((setup != NULL && setup->autojoin && g_ascii_strcasecmp(rejoin_channels_mode, "auto") == 0) ||
-		    g_ascii_strcasecmp(rejoin_channels_mode, "on") == 0) {
+		if ((setup != NULL && setup->autojoin && rejoin_channels_mode == TALT) ||
+		    rejoin_channels_mode == TON) {
 			g_string_append_printf(chans, "%s,", rec->channel);
 			g_string_append_printf(keys, "%s,", rec->key == NULL ? "x" :
 									rec->key);
@@ -687,7 +688,6 @@ char *irc_server_get_channels(IRC_SERVER_REC *server)
 	ret = chans->str;
 	g_string_free(chans, FALSE);
 	g_string_free(keys, TRUE);
-	g_free(rejoin_channels_mode);
 
 	return ret;
 }

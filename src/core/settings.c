@@ -88,6 +88,26 @@ const char *settings_get_str(const char *key)
 	return settings_get_str_type(key, SETTING_TYPE_ANY);
 }
 
+SettingTernary settings_get_ternary(const char *key, const char *alt)
+{
+	const char *val;
+
+	val = settings_get_str(key);
+
+	if (g_ascii_strcasecmp(val, "on") == 0 ||
+	    g_ascii_strcasecmp(val, "yes") == 0)
+		return TON;
+
+	if (g_ascii_strcasecmp(val, "off") == 0 ||
+	    g_ascii_strcasecmp(val, "no") == 0)
+		return TOFF;
+
+	if (g_ascii_strcasecmp(val, alt) == 0)
+		return TALT;
+
+	return TINVALID;
+}
+
 int settings_get_int(const char *key)
 {
 	SETTINGS_REC *rec;
