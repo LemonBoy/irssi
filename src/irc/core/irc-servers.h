@@ -79,6 +79,7 @@ struct _IRC_SERVER_REC {
 	int cap_complete:1;    /* We've done the initial CAP negotiation */
 
 	guint sasl_timeout; /* Holds the source id of the running timeout */
+	int sasl_success:1; /* Did we authenticate successfully ? */
 
 	/* Command sending queue */
 	int cmdcount; /* number of commands in `cmdqueue'. Can be more than
